@@ -123,9 +123,8 @@ class _MesReclamationsPageState extends State<MesReclamationsPage> {
                           ),
                           items: [
                             const DropdownMenuItem(value: null, child: Text('Tous les statuts')),
-                            const DropdownMenuItem(value: 'en attente', child: Text('En attente')),
+                            const DropdownMenuItem(value: 'ouverte', child: Text('Ouverte')),
                             const DropdownMenuItem(value: 'traitée', child: Text('Traitée')),
-                            const DropdownMenuItem(value: 'fermée', child: Text('Fermée')),
                           ],
                           onChanged: (value) {
                             setState(() {
@@ -162,21 +161,13 @@ class _MesReclamationsPageState extends State<MesReclamationsPage> {
                   final String description = rec['description'] ?? 'Aucune description';
                   final String status = rec['status'] ?? 'Inconnu';
                   
-                  // Formatage de la date
-                  String dateStr = 'Date inconnue';
-                  try {
-                    final date = DateTime.tryParse(rec['created_at'] ?? '');
-                    if (date != null) {
-                      dateStr = DateFormat('dd/MM/yyyy à HH:mm').format(date);
-                    }
-                  } catch (e) {
-                    print('Erreur formatage date: $e');
-                  }
+                  // Formatage de la date avec fonction utilitaire
+                  final String dateStr = ReclamationController.formatDateForDisplay(rec['created_at']);
 
                   Color statusColor = colorScheme.surfaceVariant;
                   Color onStatusColor = colorScheme.onSurfaceVariant;
                   switch(status.toLowerCase()) {
-                    case 'en attente':
+                    case 'ouverte':
                       statusColor = colorScheme.secondaryContainer;
                       onStatusColor = colorScheme.onSecondaryContainer;
                       break;
@@ -184,10 +175,6 @@ class _MesReclamationsPageState extends State<MesReclamationsPage> {
                       statusColor = colorScheme.tertiaryContainer;
                       onStatusColor = colorScheme.onTertiaryContainer;
                       break;
-                    case 'fermée':
-                       statusColor = colorScheme.errorContainer;
-                       onStatusColor = colorScheme.onErrorContainer;
-                       break;
                   }
 
                   return Card(

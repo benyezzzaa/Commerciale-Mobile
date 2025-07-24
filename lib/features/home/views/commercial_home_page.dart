@@ -124,7 +124,7 @@ class _CommercialHomePageState extends State<CommercialHomePage> {
             ),
           ),
 
-          // Réclamations en attente - juste en dessous du message Bonjour
+          // Réclamations ouvertes - juste en dessous du message Bonjour
           Obx(() => reclamationController.mesReclamations.isNotEmpty
             ? Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -17,6 +17,7 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
   final CommandeController controller = Get.put(CommandeController());
   String searchQuery = '';
   String sortMode = 'date';
+  DateTime? selectedDate;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -149,22 +150,71 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Rechercher une commande ou un client...',
-                  prefixIcon:
-                      Icon(Icons.search, color: colorScheme.onSurfaceVariant),
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerLow,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+              child: Column(
+                children: [
+                  // Barre de recherche
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher une commande ou un client...',
+                      prefixIcon:
+                          Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerLow,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+                    ),
+                    style: TextStyle(color: colorScheme.onSurface),
+                    onChanged: (val) => setState(() => searchQuery = val),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
-                ),
-                style: TextStyle(color: colorScheme.onSurface),
-                onChanged: (val) => setState(() => searchQuery = val),
+                  const SizedBox(height: 12),
+                  // Filtre par date
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: Icon(Icons.calendar_today, color: colorScheme.primary),
+                          label: Text(
+                            selectedDate != null 
+                              ? '${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}'
+                              : 'Filtrer par date',
+                            style: TextStyle(color: colorScheme.onSurface),
+                          ),
+                          onPressed: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                selectedDate = date;
+                              });
+                            }
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: colorScheme.outlineVariant),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (selectedDate != null)
+                        IconButton(
+                          icon: Icon(Icons.clear, color: colorScheme.error),
+                          onPressed: () {
+                            setState(() {
+                              selectedDate = null;
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -176,13 +226,31 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                 }
 
                 var filtered = controller.commandes
-                    .where((c) =>
-                        (c.numeroCommande
-                                .toLowerCase()
-                                .contains(searchQuery.toLowerCase()) ||
-                            c.clientNom
-                                .toLowerCase()
-                                .contains(searchQuery.toLowerCase())))
+                    .where((c) {
+                      // Filtre par recherche
+                      bool searchMatch = c.numeroCommande
+                              .toLowerCase()
+                              .contains(searchQuery.toLowerCase()) ||
+                          c.clientNom
+                              .toLowerCase()
+                              .contains(searchQuery.toLowerCase());
+                      
+                      // Filtre par date
+                      bool dateMatch = true;
+                      if (selectedDate != null) {
+                        try {
+                          final commandeDate = DateTime.parse(c.dateCreation);
+                          dateMatch = commandeDate.year == selectedDate!.year &&
+                                     commandeDate.month == selectedDate!.month &&
+                                     commandeDate.day == selectedDate!.day;
+                        } catch (e) {
+                          print('Erreur parsing date commande: $e');
+                          dateMatch = false;
+                        }
+                      }
+                      
+                      return searchMatch && dateMatch;
+                    })
                     .toList();
 
                 if (sortMode == 'date') {
@@ -205,15 +273,19 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          searchQuery.isEmpty 
+                          searchQuery.isEmpty && selectedDate == null
                               ? "Aucune commande trouvée"
-                              : "Aucune commande correspondant à '$searchQuery'",
+                              : searchQuery.isNotEmpty && selectedDate != null
+                                  ? "Aucune commande correspondant à '$searchQuery' le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}"
+                                  : searchQuery.isNotEmpty
+                                      ? "Aucune commande correspondant à '$searchQuery'"
+                                      : "Aucune commande le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}",
                           style: TextStyle(
                             color: colorScheme.onSurfaceVariant,
                             fontSize: 16,
                           ),
                         ),
-                        if (searchQuery.isEmpty) ...[
+                        if (searchQuery.isEmpty && selectedDate == null) ...[
                           const SizedBox(height: 8),
                           Text(
                             "Créez votre première commande !",

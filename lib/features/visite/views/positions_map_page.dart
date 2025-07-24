@@ -76,16 +76,16 @@ class _PositionsMapPageState extends State<PositionsMapPage> {
   }
 
   void _addMarkers() {
-    if (commercial != null && commercial!['latitude'] != null && commercial!['longitude'] != null) {
+    // Utiliser la position GPS actuelle pour le commercial connecté
+    if (currentPosition != null) {
       markers.add(Marker(
         markerId: const MarkerId('commercial'),
-        position: LatLng(
-          (commercial!['latitude'] as num).toDouble(),
-          (commercial!['longitude'] as num).toDouble(),
-        ),
+        position: LatLng(currentPosition!.latitude, currentPosition!.longitude),
         infoWindow: InfoWindow(
-          title: 'Commercial: ${commercial!['nom']} ${commercial!['prenom']}',
-          snippet: 'Position actuelle',
+          title: commercial != null 
+            ? 'Commercial: ${commercial!['nom']} ${commercial!['prenom']}'
+            : 'Votre Position',
+          snippet: 'Position GPS actuelle',
         ),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
       ));
@@ -103,42 +103,16 @@ class _PositionsMapPageState extends State<PositionsMapPage> {
       ));
     }
 
-    if (currentPosition != null) {
-      bool isDifferentFromCommercial = true;
-      if (commercial != null && commercial!['latitude'] != null && commercial!['longitude'] != null) {
-        final commercialLat = (commercial!['latitude'] as num).toDouble();
-        final commercialLng = (commercial!['longitude'] as num).toDouble();
-        final distance = Geolocator.distanceBetween(
-          currentPosition!.latitude,
-          currentPosition!.longitude,
-          commercialLat,
-          commercialLng,
-        );
-        isDifferentFromCommercial = distance > 100;
-      }
-
-      if (isDifferentFromCommercial) {
-        markers.add(Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: LatLng(currentPosition!.latitude, currentPosition!.longitude),
-          infoWindow: const InfoWindow(
-            title: 'Votre Position Actuelle',
-            snippet: 'Position GPS',
-          ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        ));
-      }
-    }
+    // Suppression du marqueur vert séparé car la position actuelle est maintenant le marqueur commercial
+    // Le marqueur bleu représente déjà la position GPS actuelle du commercial
   }
 
   void _createRoute() {
     List<LatLng> routePoints = [];
 
-    if (commercial != null && commercial!['latitude'] != null && commercial!['longitude'] != null) {
-      routePoints.add(LatLng(
-        (commercial!['latitude'] as num).toDouble(),
-        (commercial!['longitude'] as num).toDouble(),
-      ));
+    // Utiliser la position GPS actuelle comme point de départ
+    if (currentPosition != null) {
+      routePoints.add(LatLng(currentPosition!.latitude, currentPosition!.longitude));
     }
 
     if (client != null && client!.latitude != null && client!.longitude != null) {
@@ -164,11 +138,9 @@ class _PositionsMapPageState extends State<PositionsMapPage> {
   void _fitBounds() {
     List<LatLng> allPoints = [];
 
-    if (commercial != null && commercial!['latitude'] != null && commercial!['longitude'] != null) {
-      allPoints.add(LatLng(
-        (commercial!['latitude'] as num).toDouble(),
-        (commercial!['longitude'] as num).toDouble(),
-      ));
+    // Utiliser la position GPS actuelle au lieu des coordonnées fixes du commercial
+    if (currentPosition != null) {
+      allPoints.add(LatLng(currentPosition!.latitude, currentPosition!.longitude));
     }
 
     if (client != null && client!.latitude != null && client!.longitude != null) {
@@ -258,15 +230,13 @@ class _PositionsMapPageState extends State<PositionsMapPage> {
     }
 
     LatLng initialPosition;
-    if (commercial != null && commercial!['latitude'] != null && commercial!['longitude'] != null) {
-      initialPosition = LatLng(
-        (commercial!['latitude'] as num).toDouble(),
-        (commercial!['longitude'] as num).toDouble(),
-      );
+    if (currentPosition != null) {
+      // Utiliser la position GPS actuelle comme position initiale
+      initialPosition = LatLng(currentPosition!.latitude, currentPosition!.longitude);
     } else if (client != null && client!.latitude != null && client!.longitude != null) {
       initialPosition = LatLng(client!.latitude!, client!.longitude!);
     } else {
-      initialPosition = const LatLng(48.8566, 2.3522);
+      initialPosition = const LatLng(48.8566, 2.3522); // Paris par défaut
     }
 
     return Scaffold(
@@ -275,38 +245,6 @@ class _PositionsMapPageState extends State<PositionsMapPage> {
         backgroundColor: const Color(0xFF3F51B5),
         foregroundColor: Colors.white,
         elevation: 2,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () {
-              Get.defaultDialog(
-                title: "Retour à l'accueil",
-                middleText: "Voulez-vous revenir à la page d'accueil ?",
-                textCancel: "Annuler",
-                textConfirm: "Oui",
-                confirmTextColor: Colors.white,
-                onConfirm: () {
-                  Get.offAllNamed('/bottom-nav-wrapper');
-                },
-              );
-            },
-            tooltip: "Accueil",
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Get.offAllNamed('/visite/create');
-            },
-            tooltip: 'Nouvelle visite',
-          ),
-          IconButton(
-            icon: const Icon(Icons.route),
-            onPressed: () {
-              Get.offAllNamed('/all-visites-map');
-            },
-            tooltip: 'Voir le circuit',
-          ),
-        ],
       ),
       body: GoogleMap(
         onMapCreated: _onMapCreated,

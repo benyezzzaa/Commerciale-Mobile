@@ -22,6 +22,46 @@ class ReclamationController extends GetxController {
         'Content-Type': 'application/json',
       };
 
+  // Fonction utilitaire pour valider et formater les dates
+  static String formatDateForDisplay(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return 'Date non disponible';
+    }
+    
+    try {
+      final date = DateTime.tryParse(dateString);
+      if (date != null) {
+        return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} à ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      } else {
+        print('❌ Impossible de parser la date: $dateString');
+        return 'Date invalide';
+      }
+    } catch (e) {
+      print('❌ Erreur formatage date: $e');
+      return 'Erreur de date';
+    }
+  }
+
+  // Fonction pour valider et corriger une date
+  static String validateAndFixDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return DateTime.now().toIso8601String();
+    }
+    
+    try {
+      final date = DateTime.tryParse(dateString);
+      if (date != null) {
+        return date.toIso8601String();
+      } else {
+        print('⚠️ Date invalide, utilisation de la date actuelle: $dateString');
+        return DateTime.now().toIso8601String();
+      }
+    } catch (e) {
+      print('❌ Erreur validation date: $e');
+      return DateTime.now().toIso8601String();
+    }
+  }
+
   @override
   void onInit() {
     fetchClients();
@@ -33,10 +73,33 @@ final RxList mesReclamations = [].obs;
 Future<void> fetchMyReclamations() async {
   isLoading.value = true;
   try {
+    print('🔄 Récupération des réclamations...');
     final res = await dio.get('/reclamations/me', options: Options(headers: headers));
-    mesReclamations.value = res.data;
-    print(res.data);
+    
+    // Debug des données reçues
+    print('📡 Données reçues: ${res.data.runtimeType}');
+    print('📊 Nombre de réclamations: ${res.data.length}');
+    
+    // Validation et nettoyage des données
+    List processedData = [];
+    for (var reclamation in res.data) {
+      print('🔍 Traitement réclamation: ${reclamation.runtimeType}');
+      
+      // Validation de la date
+      reclamation['created_at'] = validateAndFixDate(reclamation['created_at']);
+      
+      // Validation des autres champs
+      reclamation['sujet'] = reclamation['sujet'] ?? 'Sujet non spécifié';
+      reclamation['description'] = reclamation['description'] ?? 'Aucune description';
+      reclamation['status'] = reclamation['status'] ?? 'Ouverte';
+      
+      processedData.add(reclamation);
+    }
+    
+    mesReclamations.value = processedData;
+    print('✅ Réclamations traitées: ${processedData.length}');
   } catch (e) {
+    print('❌ Erreur fetchMyReclamations: $e');
     Get.snackbar('Erreur', 'Impossible de récupérer les réclamations');
   } finally {
     isLoading.value = false;

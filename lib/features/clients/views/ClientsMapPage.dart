@@ -21,8 +21,14 @@ class _ClientsMapPageState extends State<ClientsMapPage> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
-    _addClientMarkers();
+    _initializeMap();
+  }
+
+  Future<void> _initializeMap() async {
+    await _determinePosition();
+    if (mounted) {
+      _addClientMarkers();
+    }
   }
 
   Future<void> _determinePosition() async {
@@ -31,9 +37,11 @@ class _ClientsMapPageState extends State<ClientsMapPage> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      setState(() {
-        error = 'Les services de localisation sont désactivés.';
-      });
+      if (mounted) {
+        setState(() {
+          error = 'Les services de localisation sont désactivés.';
+        });
+      }
       return;
     }
 
@@ -41,38 +49,48 @@ class _ClientsMapPageState extends State<ClientsMapPage> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        setState(() {
-          error = 'La permission de localisation est refusée.';
-        });
+        if (mounted) {
+          setState(() {
+            error = 'La permission de localisation est refusée.';
+          });
+        }
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      setState(() {
-        error = 'La permission de localisation est refusée de manière permanente.';
-      });
+      if (mounted) {
+        setState(() {
+          error = 'La permission de localisation est refusée de manière permanente.';
+        });
+      }
       return;
     }
 
     try {
       currentPosition = await Geolocator.getCurrentPosition();
-      setState(() {
-        markers.add(Marker(
-          markerId: const MarkerId('userLocation'),
-          position: LatLng(currentPosition!.latitude, currentPosition!.longitude),
-          infoWindow: const InfoWindow(title: 'Votre Position'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        ));
-      });
+      if (mounted) {
+        setState(() {
+          markers.add(Marker(
+            markerId: const MarkerId('userLocation'),
+            position: LatLng(currentPosition!.latitude, currentPosition!.longitude),
+            infoWindow: const InfoWindow(title: 'Votre Position'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          ));
+        });
+      }
     } catch (e) {
-      setState(() {
-        error = 'Erreur lors de l\'obtention de la position: ${e.toString()}';
-      });
+      if (mounted) {
+        setState(() {
+          error = 'Erreur lors de l\'obtention de la position: ${e.toString()}';
+        });
+      }
     }
   }
 
   void _addClientMarkers() {
+    if (!mounted) return;
+    
     if (controller.clients.isEmpty) {
       setState(() {
         error = 'Aucun client à afficher sur la carte.';
@@ -85,9 +103,11 @@ class _ClientsMapPageState extends State<ClientsMapPage> {
     ).length;
 
     if (clientsWithCoords == 0) {
-      setState(() {
-        error = 'Aucun client n\'a de coordonnées GPS valides.';
-      });
+      if (mounted) {
+        setState(() {
+          error = 'Aucun client n\'a de coordonnées GPS valides.';
+        });
+      }
       return;
     }
 
@@ -105,12 +125,14 @@ class _ClientsMapPageState extends State<ClientsMapPage> {
       );
     }).whereType<Marker>().toSet();
 
-    setState(() {
-      markers.addAll(clientMarkers);
-      if (clientsWithCoords < controller.clients.length) {
-        error = '${controller.clients.length - clientsWithCoords} clients n\'ont pas de coordonnées GPS.';
-      }
-    });
+    if (mounted) {
+      setState(() {
+        markers.addAll(clientMarkers);
+        if (clientsWithCoords < controller.clients.length) {
+          error = '${controller.clients.length - clientsWithCoords} clients n\'ont pas de coordonnées GPS.';
+        }
+      });
+    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -137,6 +159,12 @@ class _ClientsMapPageState extends State<ClientsMapPage> {
         );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    mapController?.dispose();
+    super.dispose();
   }
 
   @override
