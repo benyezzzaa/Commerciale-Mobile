@@ -97,6 +97,27 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
     }
   }
 
+  String _getDayName(DateTime date) {
+    switch (date.weekday) {
+      case 1:
+        return 'Lundi';
+      case 2:
+        return 'Mardi';
+      case 3:
+        return 'Mercredi';
+      case 4:
+        return 'Jeudi';
+      case 5:
+        return 'Vendredi';
+      case 6:
+        return 'Samedi';
+      case 7:
+        return 'Dimanche';
+      default:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -148,71 +169,276 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
               iconTheme: const IconThemeData(color: Colors.white),
               elevation: 2,
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            // Section de recherche et filtres avec design amélioré
+            Container(
+              margin: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.primaryContainer.withOpacity(0.1),
+                    colorScheme.secondaryContainer.withOpacity(0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withOpacity(0.3),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.shadow.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Column(
                 children: [
-                  // Barre de recherche
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher une commande ou un client...',
-                      prefixIcon:
-                          Icon(Icons.search, color: colorScheme.onSurfaceVariant),
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerLow,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+                  // Barre de recherche améliorée
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    style: TextStyle(color: colorScheme.onSurface),
-                    onChanged: (val) => setState(() => searchQuery = val),
-                  ),
-                  const SizedBox(height: 12),
-                  // Filtre par date
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: Icon(Icons.calendar_today, color: colorScheme.primary),
-                          label: Text(
-                            selectedDate != null 
-                              ? '${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}'
-                              : 'Filtrer par date',
-                            style: TextStyle(color: colorScheme.onSurface),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: '🔍 Rechercher une commande ou un client...',
+                        hintStyle: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 16,
+                        ),
+                        prefixIcon: Container(
+                          margin: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          onPressed: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: selectedDate ?? DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime.now(),
-                            );
-                            if (date != null) {
-                              setState(() {
-                                selectedDate = date;
-                              });
-                            }
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: colorScheme.outlineVariant),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          child: Icon(
+                            Icons.search,
+                            color: colorScheme.primary,
+                            size: 24,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: colorScheme.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 18,
+                          horizontal: 16,
+                        ),
+                      ),
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: 16,
+                      ),
+                      onChanged: (val) => setState(() => searchQuery = val),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Filtre par date avec design amélioré et calendrier personnalisé
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colorScheme.surface,
+                          colorScheme.surfaceContainerLow.withOpacity(0.3),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant.withOpacity(0.2),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: colorScheme,
+                                  dialogTheme: DialogTheme(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (date != null) {
+                            setState(() {
+                              selectedDate = date;
+                            });
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              // Icône de calendrier stylisée
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      colorScheme.primary.withOpacity(0.1),
+                                      colorScheme.primary.withOpacity(0.2),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colorScheme.primary.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.calendar_month_rounded,
+                                  color: colorScheme.primary,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              
+                              // Informations de date
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      selectedDate != null 
+                                        ? '📅 Date sélectionnée'
+                                        : '📅 Filtrer par date',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      selectedDate != null 
+                                        ? '${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}'
+                                        : 'Cliquez pour choisir une date',
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (selectedDate != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _getDayName(selectedDate!),
+                                        style: TextStyle(
+                                          color: colorScheme.primary,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              
+                              // Icône de flèche ou bouton de suppression
+                              if (selectedDate != null)
+                                Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(10),
+                                      onTap: () {
+                                        setState(() {
+                                          selectedDate = null;
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              colorScheme.errorContainer,
+                                              colorScheme.error.withOpacity(0.1),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(10),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: colorScheme.error.withOpacity(0.2),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          Icons.close_rounded,
+                                          color: colorScheme.onErrorContainer,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    color: colorScheme.primary,
+                                    size: 16,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      if (selectedDate != null)
-                        IconButton(
-                          icon: Icon(Icons.clear, color: colorScheme.error),
-                          onPressed: () {
-                            setState(() {
-                              selectedDate = null;
-                            });
-                          },
-                        ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -263,39 +489,169 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
 
                 if (filtered.isEmpty) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 64,
-                          color: colorScheme.onSurfaceVariant,
+                    child: Container(
+                      margin: const EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.surfaceContainerLow.withOpacity(0.3),
+                            colorScheme.surfaceContainerLow.withOpacity(0.1),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          searchQuery.isEmpty && selectedDate == null
-                              ? "Aucune commande trouvée"
-                              : searchQuery.isNotEmpty && selectedDate != null
-                                  ? "Aucune commande correspondant à '$searchQuery' le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}"
-                                  : searchQuery.isNotEmpty
-                                      ? "Aucune commande correspondant à '$searchQuery'"
-                                      : "Aucune commande le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}",
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 16,
-                          ),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withOpacity(0.2),
                         ),
-                        if (searchQuery.isEmpty && selectedDate == null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            "Créez votre première commande !",
-                            style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
-                              fontSize: 14,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Icône animée
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  colorScheme.primary.withOpacity(0.1),
+                                  colorScheme.secondary.withOpacity(0.1),
+                                ],
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.shopping_cart_outlined,
+                              size: 64,
+                              color: colorScheme.primary,
                             ),
                           ),
+                          const SizedBox(height: 24),
+                          
+                          // Titre principal
+                          Text(
+                            searchQuery.isEmpty && selectedDate == null
+                                ? "Aucune commande trouvée"
+                                : searchQuery.isNotEmpty && selectedDate != null
+                                    ? "Aucun résultat"
+                                    : searchQuery.isNotEmpty
+                                        ? "Aucun résultat"
+                                        : "Aucune commande",
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          
+                          // Message détaillé
+                          Text(
+                            searchQuery.isEmpty && selectedDate == null
+                                ? "Vous n'avez pas encore créé de commandes"
+                                : searchQuery.isNotEmpty && selectedDate != null
+                                    ? "Aucune commande correspondant à '$searchQuery' le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}"
+                                    : searchQuery.isNotEmpty
+                                        ? "Aucune commande correspondant à '$searchQuery'"
+                                        : "Aucune commande le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}",
+                            style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          
+                          if (searchQuery.isEmpty && selectedDate == null) ...[
+                            const SizedBox(height: 24),
+                            
+                            // Bouton d'action
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    colorScheme.primary,
+                                    colorScheme.primary.withOpacity(0.8),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colorScheme.primary.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    Get.toNamed('/select-products');
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 16,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.add_shopping_cart_rounded,
+                                          color: colorScheme.onPrimary,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "Créer ma première commande",
+                                          style: TextStyle(
+                                            color: colorScheme.onPrimary,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 24),
+                            
+                            // Bouton pour effacer les filtres
+                            OutlinedButton.icon(
+                              icon: Icon(Icons.clear_all, color: colorScheme.primary),
+                              label: Text(
+                                "Effacer les filtres",
+                                style: TextStyle(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  searchQuery = '';
+                                  selectedDate = null;
+                                });
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: colorScheme.primary),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   );
                 }
@@ -314,138 +670,335 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                       itemBuilder: (context, index) {
                         final cmd = filtered[index];
 
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          color: colorScheme.surface,
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            title: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    cmd.numeroCommande,
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: _getStatusColor(cmd.statut, colorScheme),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    _getStatusText(cmd.statut),
-                                    style: TextStyle(
-                                      color: _getStatusTextColor(cmd.statut, colorScheme),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                colorScheme.surface,
+                                colorScheme.surfaceContainerLow,
                               ],
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 8),
-                                Row(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.shadow.withOpacity(0.1),
+                                blurRadius: 15,
+                                offset: const Offset(0, 6),
+                                spreadRadius: 2,
+                              ),
+                              BoxShadow(
+                                color: colorScheme.shadow.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: () => Get.toNamed('/commandes/details', arguments: {
+                                'commande': cmd.toJson(),
+                              }),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(
-                                      Icons.person_outline,
-                                      size: 16,
-                                      color: colorScheme.onSurfaceVariant,
+                                    // En-tête avec numéro de commande et statut
+                                    Row(
+                                      children: [
+                                        // Icône de commande
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                colorScheme.primary.withOpacity(0.1),
+                                                colorScheme.primary.withOpacity(0.2),
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Icon(
+                                            Icons.shopping_cart_rounded,
+                                            color: colorScheme.primary,
+                                            size: 24,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        
+                                        // Numéro de commande
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Commande',
+                                                style: TextStyle(
+                                                  color: colorScheme.onSurfaceVariant,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                cmd.numeroCommande,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18,
+                                                  color: colorScheme.onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        
+                                                                                 // Espace pour équilibrer le design
+                                         const SizedBox(width: 8),
+                                      ],
                                     ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        cmd.clientNom,
-                                        style: TextStyle(
-                                            color: colorScheme.onSurfaceVariant),
+                                    
+                                    const SizedBox(height: 20),
+                                    
+                                    // Informations du client
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.surfaceContainerLow.withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: colorScheme.outlineVariant.withOpacity(0.2),
+                                        ),
                                       ),
+                                      child: Column(
+                                        children: [
+                                          // Nom du client
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: colorScheme.secondaryContainer,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Icon(
+                                                  Icons.person_rounded,
+                                                  size: 16,
+                                                  color: colorScheme.onSecondaryContainer,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Client',
+                                                      style: TextStyle(
+                                                        color: colorScheme.onSurfaceVariant,
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      cmd.clientNom,
+                                                      style: TextStyle(
+                                                        color: colorScheme.onSurface,
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          
+                                          const SizedBox(height: 12),
+                                          
+                                          // Date de création
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: colorScheme.tertiaryContainer,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Icon(
+                                                  Icons.calendar_today_rounded,
+                                                  size: 16,
+                                                  color: colorScheme.onTertiaryContainer,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Date de création',
+                                                      style: TextStyle(
+                                                        color: colorScheme.onSurfaceVariant,
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      _formatDate(cmd.dateCreation),
+                                                      style: TextStyle(
+                                                        color: colorScheme.onSurface,
+                                                        fontSize: 14,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          
+                                          // Téléphone du client (si disponible)
+                                          if (cmd.clientTelephone != null) ...[
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(8),
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.primaryContainer,
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.phone_rounded,
+                                                    size: 16,
+                                                    color: colorScheme.onPrimaryContainer,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        'Téléphone',
+                                                        style: TextStyle(
+                                                          color: colorScheme.onSurfaceVariant,
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        cmd.clientTelephone!,
+                                                        style: TextStyle(
+                                                          color: colorScheme.onSurface,
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    
+                                    const SizedBox(height: 16),
+                                    
+                                    // Informations de la commande
+                                    Row(
+                                      children: [
+                                        // Nombre de produits
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surfaceContainerLow.withOpacity(0.3),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.shopping_bag_rounded,
+                                                  size: 18,
+                                                  color: colorScheme.primary,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  "${cmd.lignes.length} produit${cmd.lignes.length > 1 ? 's' : ''}",
+                                                  style: TextStyle(
+                                                    color: colorScheme.onSurface,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        
+                                        const SizedBox(width: 12),
+                                        
+                                        // Prix total
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  colorScheme.primary.withOpacity(0.1),
+                                                  colorScheme.primary.withOpacity(0.2),
+                                                ],
+                                              ),
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: colorScheme.primary.withOpacity(0.3),
+                                              ),
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Text(
+                                                  'Total TTC',
+                                                  style: TextStyle(
+                                                    color: colorScheme.onSurfaceVariant,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  "${cmd.prixTotalTTC.toStringAsFixed(2)} €",
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                    color: colorScheme.primary,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "HT: ${cmd.prixHorsTaxe.toStringAsFixed(2)} €",
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: colorScheme.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today_outlined,
-                                      size: 16,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      _formatDate(cmd.dateCreation),
-                                      style: TextStyle(
-                                          color: colorScheme.onSurfaceVariant),
-                                    ),
-                                  ],
-                                ),
-                                if (cmd.clientTelephone != null) ...[
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.phone_outlined,
-                                        size: 16,
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        cmd.clientTelephone!,
-                                        style: TextStyle(
-                                            color: colorScheme.onSurfaceVariant),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.shopping_bag_outlined,
-                                      size: 16,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "${cmd.lignes.length} produit${cmd.lignes.length > 1 ? 's' : ''}",
-                                      style: TextStyle(
-                                          color: colorScheme.onSurfaceVariant),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
-                            trailing: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "${cmd.prixTotalTTC.toStringAsFixed(2)} €",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: colorScheme.primary),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "HT: ${cmd.prixHorsTaxe.toStringAsFixed(2)} €",
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: colorScheme.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                            onTap: () => Get.toNamed('/commandes/details', arguments: {
-                              'commande': cmd.toJson(),
-                            }),
                           ),
                         );
                       },

@@ -6,13 +6,14 @@ import 'package:pfe/core/utils/app_services.dart';
 import 'package:pfe/core/utils/app_api.dart';
 import 'package:pfe/core/utils/storage_services.dart';
 import 'package:pfe/features/clients/models/client_model.dart';
-// 👈 AJOUT ICI
+import 'package:pfe/features/commande/services/client_service.dart';
 
 class ClientController extends GetxController {
   final clients = <ClientModel>[].obs;
   final isLoading = false.obs;
   final ApiService _api = ApiService(); // ✅ Tu utilises bien ApiService
   final Dio dio = Dio(); // pour les appels manuels
+  final ClientService _clientService = ClientService(); // Service pour vérifier le SIRET
 
   /// 🔄 Charger les clients du commercial connecté
   Future<void> fetchMesClients() async {
@@ -94,6 +95,16 @@ class ClientController extends GetxController {
     }
   }
 
+  /// 🔍 Vérifier si un SIRET existe déjà
+  Future<bool> checkSiretExists(String siret) async {
+    try {
+      return await _clientService.checkSiretExists(siret);
+    } catch (e) {
+      print('Erreur lors de la vérification du SIRET: $e');
+      return true; // En cas d'erreur, on considère que le SIRET existe
+    }
+  }
+
   /// ➕ Ajouter un client
   Future<ClientModel?> addClient({
     required String nom,
@@ -110,6 +121,21 @@ class ClientController extends GetxController {
     String formattedTelephone = _formatTelephone(telephone);
     print('📞 Téléphone original: $telephone');
     print('📞 Téléphone formaté: $formattedTelephone');
+    
+    // Vérifier si le SIRET existe déjà
+    print('🔍 Vérification du SIRET: $codeFiscale');
+    final siretExists = await checkSiretExists(codeFiscale);
+    if (siretExists) {
+      Get.snackbar(
+        'SIRET déjà existant',
+        'Un client avec ce numéro SIRET existe déjà dans la base de données. Impossible d\'ajouter ce client.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+      return null;
+    }
+    
     try {
       // Validation des données avant envoi
       print('🔍 Validation des données client:');

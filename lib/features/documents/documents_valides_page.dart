@@ -1100,7 +1100,12 @@ class _DocumentsValidesPageState extends State<DocumentsValidesPage> with Single
 
   void _downloadDocument(dynamic doc) async {
     final id = doc['id'];
+    final numeroCommande = doc['numero_commande'] ?? 'N/A';
+    
+    print('📄 Début du téléchargement pour la commande: $numeroCommande (ID: $id)');
+    
     try {
+      // Afficher le dialogue de chargement avec plus d'informations
       Get.dialog(
         Center(
           child: Container(
@@ -1108,44 +1113,133 @@ class _DocumentsValidesPageState extends State<DocumentsValidesPage> with Single
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+                    strokeWidth: 3,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                Text('Téléchargement en cours...'),
+                Text(
+                  'Téléchargement en cours...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Commande n°$numeroCommande',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Veuillez patienter...',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
               ],
             ),
           ),
         ),
         barrierDismissible: false,
       );
+      
+      // Télécharger le PDF
       await api.downloadPdf(id);
+      
+      // Fermer le dialogue de chargement
       Get.back();
+      
+      // Afficher le message de succès
       Get.snackbar(
-        "✅ Succès",
-        "PDF téléchargé avec succès",
-        backgroundColor: Colors.green,
+        "✅ Téléchargement réussi",
+        "Le PDF de la commande n°$numeroCommande a été téléchargé et ouvert",
+        backgroundColor: Colors.green.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
-        duration: Duration(seconds: 3),
-        margin: EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+        margin: const EdgeInsets.all(16),
         borderRadius: 12,
-        icon: Icon(Icons.check_circle, color: Colors.white),
+        icon: Icon(Icons.check_circle, color: Colors.white, size: 24),
+        mainButton: TextButton(
+          onPressed: () => Get.back(),
+          child: Text(
+            'OK',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
       );
+      
+      print('✅ Téléchargement PDF réussi pour la commande: $numeroCommande');
+      
     } catch (e) {
+      // Fermer le dialogue de chargement
       Get.back();
+      
+      print('❌ Erreur lors du téléchargement: $e');
+      
+      // Déterminer le message d'erreur approprié
+      String errorTitle = "❌ Erreur de téléchargement";
+      String errorMessage = "Impossible de télécharger le PDF";
+      
+      if (e.toString().contains('PDF non trouvé')) {
+        errorTitle = "📄 PDF non disponible";
+        errorMessage = "Aucun PDF généré pour cette commande";
+      } else if (e.toString().contains('Accès non autorisé')) {
+        errorTitle = "🔐 Session expirée";
+        errorMessage = "Veuillez vous reconnecter pour télécharger";
+      } else if (e.toString().contains('Erreur serveur')) {
+        errorTitle = "🌐 Erreur serveur";
+        errorMessage = "Le serveur est temporairement indisponible";
+      } else if (e.toString().contains('timeout') || e.toString().contains('délai')) {
+        errorTitle = "⏱️ Délai dépassé";
+        errorMessage = "Vérifiez votre connexion internet";
+      } else if (e.toString().contains('Permission')) {
+        errorTitle = "📁 Permission refusée";
+        errorMessage = "Impossible de sauvegarder le fichier";
+      }
+      
+      // Afficher le message d'erreur
       Get.snackbar(
-        "❌ Erreur",
-        "Échec du téléchargement",
-        backgroundColor: Colors.red,
+        errorTitle,
+        errorMessage,
+        backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
-        duration: Duration(seconds: 3),
-        margin: EdgeInsets.all(16),
+        duration: const Duration(seconds: 5),
+        margin: const EdgeInsets.all(16),
         borderRadius: 12,
-        icon: Icon(Icons.error, color: Colors.white),
+        icon: Icon(Icons.error_outline, color: Colors.white, size: 24),
+        mainButton: TextButton(
+          onPressed: () => Get.back(),
+          child: Text(
+            'Compris',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
       );
     }
   }

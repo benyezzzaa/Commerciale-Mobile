@@ -27,6 +27,12 @@ class _AddClientPageState extends State<AddClientPage> {
 
   final ClientController clientController = Get.find<ClientController>();
   final AddClientController addClientController = Get.put(AddClientController());
+  
+  // Variables pour la validation du SIRET
+  bool _isCheckingSiret = false;
+  bool _siretExists = false;
+  String _siretErrorMessage = '';
+  Timer? _siretDebounceTimer;
 
   GoogleMapController? mapController;
   LatLng? selectedLocation;
@@ -43,6 +49,69 @@ class _AddClientPageState extends State<AddClientPage> {
   void initState() {
     super.initState();
     fetchCategories();
+  }
+
+  /// Vérifier si le SIRET existe déjà
+  Future<void> _checkSiretExists(String siret) async {
+    // Annuler le timer précédent
+    _siretDebounceTimer?.cancel();
+    
+    // Réinitialiser l'état à chaque modification
+    setState(() {
+      _isCheckingSiret = false;
+      _siretExists = false;
+      _siretErrorMessage = '';
+    });
+    
+    // Si le SIRET n'est pas complet, ne pas vérifier
+    if (siret.length != 14 || !RegExp(r'^\d{14}$').hasMatch(siret)) {
+      return;
+    }
+
+    // Attendre 1 seconde avant de vérifier (debounce)
+    _siretDebounceTimer = Timer(const Duration(seconds: 1), () async {
+      // Vérifier à nouveau que le SIRET est toujours valide (au cas où l'utilisateur aurait modifié entre temps)
+      final currentSiret = addClientController.fiscalNumberController.text;
+      if (currentSiret != siret || currentSiret.length != 14 || !RegExp(r'^\d{14}$').hasMatch(currentSiret)) {
+        return; // Le SIRET a changé ou n'est plus valide
+      }
+
+      setState(() {
+        _isCheckingSiret = true;
+        _siretExists = false;
+        _siretErrorMessage = '';
+      });
+
+      try {
+        final exists = await clientController.checkSiretExists(siret);
+        
+        // Vérifier à nouveau que le SIRET n'a pas changé pendant la requête
+        final finalSiret = addClientController.fiscalNumberController.text;
+        if (finalSiret != siret) {
+          return; // Le SIRET a changé pendant la requête
+        }
+        
+        setState(() {
+          _isCheckingSiret = false;
+          _siretExists = exists;
+          if (exists) {
+            _siretErrorMessage = 'Ce numéro SIRET existe déjà dans la base de données';
+          }
+        });
+      } catch (e) {
+        // Vérifier à nouveau que le SIRET n'a pas changé pendant la requête
+        final finalSiret = addClientController.fiscalNumberController.text;
+        if (finalSiret != siret) {
+          return; // Le SIRET a changé pendant la requête
+        }
+        
+        setState(() {
+          _isCheckingSiret = false;
+          _siretExists = false;
+          _siretErrorMessage = 'Erreur lors de la vérification du SIRET';
+        });
+      }
+    });
   }
 
 Future<void> fetchCategories() async {
@@ -74,6 +143,7 @@ Future<void> fetchCategories() async {
     mapController?.dispose();
     addClientController.dispose();
     _debounceTimer?.cancel();
+    _siretDebounceTimer?.cancel();
     super.dispose();
   }
 
@@ -284,6 +354,42 @@ Future<void> fetchCategories() async {
         duration: const Duration(seconds: 4),
       );
       return;
+    }
+
+    // Vérifier si le SIRET existe déjà (vérification finale)
+    if (_siretExists) {
+      Get.snackbar(
+        'SIRET déjà existant',
+        'Un client avec ce numéro SIRET existe déjà. Impossible d\'ajouter ce client.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+      return;
+    }
+
+    // Vérification supplémentaire au moment de la soumission
+    if (fiscalCode.length == 14 && RegExp(r'^\d{14}$').hasMatch(fiscalCode)) {
+      try {
+        final exists = await clientController.checkSiretExists(fiscalCode);
+        if (exists) {
+          setState(() {
+            _siretExists = true;
+            _siretErrorMessage = 'Ce numéro SIRET existe déjà dans la base de données';
+          });
+          Get.snackbar(
+            'SIRET déjà existant',
+            'Un client avec ce numéro SIRET existe déjà. Impossible d\'ajouter ce client.',
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+          );
+          return;
+        }
+      } catch (e) {
+        print('Erreur lors de la vérification finale du SIRET: $e');
+        // En cas d'erreur, on continue pour ne pas bloquer l'utilisateur
+      }
     }
 
     if (selectedLocation == null) {
@@ -538,7 +644,13 @@ Future<void> fetchCategories() async {
             const SizedBox(height: 16),
 
             /// ✅ OCR Fiscal Scanner
-            FiscalTextFieldWithCamera(controller: addClientController),
+            FiscalTextFieldWithCamera(
+              controller: addClientController,
+              onSiretChanged: _checkSiretExists,
+              isCheckingSiret: _isCheckingSiret,
+              siretExists: _siretExists,
+              siretErrorMessage: _siretErrorMessage,
+            ),
             const SizedBox(height: 16),
             DropdownButtonFormField(
               value: selectedCategorie,

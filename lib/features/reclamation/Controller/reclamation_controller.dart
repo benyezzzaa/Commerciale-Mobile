@@ -12,9 +12,12 @@ class ReclamationController extends GetxController {
   final RxList clients = [].obs;
   final RxBool isLoading = true.obs;
   final selectedClientId = Rxn<int>();
+  final selectedClientName = ''.obs;
+  final RxList filteredClients = [].obs;
 
   final sujetController = TextEditingController();
   final descriptionController = TextEditingController();
+  final clientSearchController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   Map<String, String> get headers => {
@@ -109,11 +112,46 @@ Future<void> fetchMyReclamations() async {
     try {
       final res = await dio.get('/client/mes-clients', options: Options(headers: headers));
       clients.value = res.data;
+      // Initialiser la liste filtrée avec tous les clients
+      filteredClients.value = res.data;
     } catch (e) {
       Get.snackbar('Erreur', 'Impossible de charger les clients');
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Méthode pour rechercher des clients
+  void searchClient(String query) {
+    if (query.isEmpty) {
+      filteredClients.value = clients;
+    } else {
+      filteredClients.value = clients.where((client) {
+        final nom = (client['nom'] ?? '').toString().toLowerCase();
+        final adresse = (client['adresse'] ?? '').toString().toLowerCase();
+        final searchQuery = query.toLowerCase();
+        
+        return nom.contains(searchQuery) || adresse.contains(searchQuery);
+      }).toList();
+    }
+  }
+
+  // Méthode pour sélectionner un client
+  void selectClient(Map<String, dynamic> client) {
+    selectedClientId.value = client['id'];
+    selectedClientName.value = client['nom'] ?? 'Client inconnu';
+    clientSearchController.text = client['nom'] ?? '';
+    // Vider la liste filtrée après sélection
+    filteredClients.clear();
+  }
+
+  // Méthode pour effacer la sélection de client
+  void clearSelectedClient() {
+    selectedClientId.value = null;
+    selectedClientName.value = '';
+    clientSearchController.clear();
+    // Remettre tous les clients dans la liste filtrée
+    filteredClients.value = clients;
   }
 
  Future<void> submitReclamation() async {

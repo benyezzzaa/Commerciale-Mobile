@@ -56,34 +56,112 @@ class ReclamationFormPage extends StatelessWidget {
                   ),
                 ),
 
-                DropdownButtonFormField<int>(
-                  value: controller.selectedClientId.value,
-                  onChanged: (val) => controller.selectedClientId.value = val!,
-                  items: controller.clients
-                      .map((c) => DropdownMenuItem<int>(
-                            value: c['id'],
-                            child: Text(c['nom'] ?? 'Client inconnu', style: TextStyle(color: colorScheme.onSurface)), // Use onSurface
-                          ))
-                      .toList(),
+                // Zone de recherche de client avec clavier intelligent
+                TextFormField(
+                  controller: controller.clientSearchController,
                   decoration: InputDecoration(
+                    labelText: 'Rechercher un client',
+                    labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                     border: OutlineInputBorder(
-                       borderRadius: BorderRadius.circular(8), // Consistent border radius
-                       borderSide: BorderSide(color: colorScheme.outlineVariant), // Use outlineVariant
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     focusedBorder: OutlineInputBorder(
-                       borderRadius: BorderRadius.circular(8), // Consistent border radius
-                       borderSide: BorderSide(color: colorScheme.primary, width: 2), // Use primary
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: colorScheme.primary, width: 2),
                     ),
-                     filled: true,
-                     fillColor: colorScheme.surfaceContainerLow, // Use subtle surface color
-                    hintText: 'Sélectionner un client',
-                     hintStyle: TextStyle(color: colorScheme.onSurfaceVariant), // Use onSurfaceVariant
-                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15), // Adjusted padding
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerLow,
+                    hintText: 'Tapez le nom du client...',
+                    hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                    suffixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
                   ),
-                   style: TextStyle(color: colorScheme.onSurface), // Use onSurface
-                  validator: (val) =>
-                      val == null ? 'Client requis' : null,
+                  style: TextStyle(color: colorScheme.onSurface),
+                  onChanged: (value) => controller.searchClient(value),
+                  validator: (val) => controller.selectedClientId.value == null ? 'Client requis' : null,
                 ),
+                
+                // Liste des clients filtrés
+                if (controller.filteredClients.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: colorScheme.outlineVariant),
+                      borderRadius: BorderRadius.circular(8),
+                      color: colorScheme.surface,
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: controller.filteredClients.length,
+                      itemBuilder: (context, index) {
+                        final client = controller.filteredClients[index];
+                        return ListTile(
+                          title: Text(
+                            client['nom'] ?? 'Client inconnu',
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: Text(
+                            client['adresse'] ?? 'Adresse non disponible',
+                            style: TextStyle(color: colorScheme.onSurfaceVariant),
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: colorScheme.primaryContainer,
+                            child: Text(
+                              (client['nom'] ?? 'C')[0].toUpperCase(),
+                              style: TextStyle(
+                                color: colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          onTap: () {
+                            controller.selectClient(client);
+                            FocusScope.of(context).unfocus(); // Fermer le clavier
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                
+                // Client sélectionné affiché
+                if (controller.selectedClientId.value != null)
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: colorScheme.primary),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          color: colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Client sélectionné: ${controller.selectedClientName.value}',
+                            style: TextStyle(
+                              color: colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.clear, color: colorScheme.primary),
+                          onPressed: () => controller.clearSelectedClient(),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 20), // Consistent spacing
                 
                 // Titre pour le sujet

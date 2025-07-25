@@ -15,20 +15,44 @@ class ClientService {
       throw Exception("Échec de chargement des clients");
     }
   }
-  Future<ClientModel> ajouterClient(Map<String, dynamic> data) async {
-    final box = GetStorage ();
-  final token = box.read('token');
 
-  final response = await _dio.post(
-    '/clients',
-    data: data,
-    options: Options(headers: {'Authorization': 'Bearer $token'}),
-  );
+  /// Vérifier si un numéro SIRET existe déjà
+  Future<bool> checkSiretExists(String siret) async {
+    try {
+      final box = GetStorage();
+      final token = box.read('token');
 
-  if (response.statusCode == 201 || response.statusCode == 200) {
-    return ClientModel.fromJson(response.data);
-  } else {
-    throw Exception("Erreur ajout client");
+      final response = await _dio.get(
+        '/clients/check-siret/$siret',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data['exists'] ?? false;
+      } else {
+        throw Exception("Erreur lors de la vérification du SIRET");
+      }
+    } catch (e) {
+      print('Erreur lors de la vérification du SIRET: $e');
+      // En cas d'erreur, on considère que le SIRET existe pour éviter les doublons
+      return true;
+    }
   }
-}
+
+  Future<ClientModel> ajouterClient(Map<String, dynamic> data) async {
+    final box = GetStorage();
+    final token = box.read('token');
+
+    final response = await _dio.post(
+      '/clients',
+      data: data,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return ClientModel.fromJson(response.data);
+    } else {
+      throw Exception("Erreur ajout client");
+    }
+  }
 }
