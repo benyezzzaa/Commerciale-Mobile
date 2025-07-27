@@ -20,7 +20,7 @@ class VisiteService {
 
   Future<List<ClientModel>> getClients(String token) async {
     final response = await http.get(
-      Uri.parse('${AppApi.baseUrl}/client'),
+      Uri.parse('${AppApi.baseUrl}/client/mes-clients'),
       headers: {
         'Authorization': 'Bearer $token',
          'Content-Type': 'application/json',
@@ -33,7 +33,9 @@ class VisiteService {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => ClientModel.fromJson(json)).toList();
     } else {
-      throw Exception('Failed to load clients');
+      print('❌ Erreur API clients - Status: ${response.statusCode}');
+      print('❌ Body: ${response.body}');
+      throw Exception('Failed to load clients: ${response.statusCode}');
     }
   }
 
@@ -46,11 +48,15 @@ class VisiteService {
       },
     );
 
+    print('Réponse API raisons : ' + response.body);
+
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => RaisonModel.fromJson(json)).toList();
     } else {
-      throw Exception('Failed to load raisons');
+      print('❌ Erreur API raisons - Status: ${response.statusCode}');
+      print('❌ Body: ${response.body}');
+      throw Exception('Failed to load raisons: ${response.statusCode}');
     }
   }
 

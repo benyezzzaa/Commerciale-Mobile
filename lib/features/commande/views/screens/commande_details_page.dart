@@ -15,7 +15,14 @@ class CommandeDetailsPage extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final totalTtc = double.tryParse(commande['prix_total_ttc']?.toString() ?? '0') ?? 0.0;
     final totalHt = double.tryParse(commande['prix_hors_taxe']?.toString() ?? '0') ?? 0.0;
-    final tva = double.tryParse(commande['tva']?.toString() ?? '0') ?? 0.0;
+    final montantTva = totalTtc - totalHt;
+    
+    // Calcul du taux de TVA en pourcentage
+    double tauxTva = 0.0;
+    if (totalHt > 0) {
+      tauxTva = (montantTva / totalHt) * 100;
+    }
+    
     final lignesCommande = commande['lignesCommande'] as List<dynamic>? ?? [];
 
     return Scaffold(
@@ -218,8 +225,8 @@ class CommandeDetailsPage extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('TVA (${tva.toStringAsFixed(2)}%):', style: TextStyle(color: colorScheme.onSurfaceVariant)),
-                        Text('${(totalTtc - totalHt).toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.w500)),
+                        Text('TVA (${tauxTva.toStringAsFixed(1)}%):', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                        Text('${montantTva.toStringAsFixed(2)} €', style: TextStyle(fontWeight: FontWeight.w500)),
                       ],
                     ),
                     const Divider(),

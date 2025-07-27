@@ -77,13 +77,418 @@ class _SelectProductsPageState extends State<SelectProductsPage> {
 
   void removeFromCart(int productId) {
     setState(() {
-      if ((cart[productId] ?? 0) > 0) {
-        cart[productId] = cart[productId]! - 1;
+      final currentQuantity = cart[productId] ?? 0;
+      if (currentQuantity > 0) {
+        cart[productId] = currentQuantity - 1;
+        if (cart[productId] == 0) {
+          cart.remove(productId);
+        }
       }
     });
   }
 
   int get cartItemCount => cart.values.fold(0, (sum, qte) => sum + qte);
+
+  Future<bool?> _showConfirmationDialog(BuildContext context, dynamic selectedClient) {
+    final selectedProducts = (produitController.produits ?? []).where((p) => (cart[p.id] ?? 0) > 0).toList();
+    final totalAmount = selectedProducts.fold<double>(
+      0, (sum, p) => sum + (p.prixUnitaireTTC * (cart[p.id] ?? 0))
+    );
+
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.shopping_cart_checkout, color: colorScheme.primary, size: 28),
+            const SizedBox(width: 12),
+            const Text(
+              'Confirmer la commande',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Informations du client
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.primary.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: colorScheme.primary,
+                    child: Icon(
+                      Icons.person,
+                      color: colorScheme.onPrimary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${selectedClient.prenom} ${selectedClient.nom}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          selectedClient.email,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Résumé de la commande
+            Text(
+              'Résumé de votre commande :',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            // Nombre de produits
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Produits sélectionnés :',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  '${selectedProducts.length} produit${selectedProducts.length > 1 ? 's' : ''}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            
+            // Quantité totale
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Quantité totale :',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  '${cartItemCount} unité${cartItemCount > 1 ? 's' : ''}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            
+            // Promotion sélectionnée
+            if (selectedPromotion != null)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Promotion :',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                                     Text(
+                     selectedPromotion?.titre ?? 'Aucune',
+                     style: TextStyle(
+                       fontSize: 14,
+                       fontWeight: FontWeight.w600,
+                       color: colorScheme.primary,
+                     ),
+                   ),
+                ],
+              ),
+            const SizedBox(height: 12),
+            
+            // Ligne de séparation
+            Divider(color: colorScheme.outlineVariant),
+            const SizedBox(height: 8),
+            
+            // Montant total
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Montant total :',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  '${totalAmount.toStringAsFixed(2)} €',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Confirmer',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      );
+      },
+    );
+  }
+
+  Future<void> _showSuccessDialog(BuildContext context) {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.check_circle,
+                color: Colors.green.shade600,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Commande créée !',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Text(
+              'Votre commande a été créée avec succès.',
+              style: TextStyle(
+                fontSize: 16,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.primary.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Vous recevrez une notification une fois que votre commande sera validée.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+                      ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'OK',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      );
+      },
+    );
+  }
+
+  void _showQuantityDialog(BuildContext context, ProduitModel product, int currentQuantity, VoidCallback onUpdate) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final TextEditingController quantityController = TextEditingController(text: currentQuantity.toString());
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.edit, color: colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text('Modifier la quantité'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              product.nom,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: quantityController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Quantité',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: Icon(Icons.shopping_cart, color: colorScheme.primary),
+                suffixText: 'unités',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newQuantity = int.tryParse(quantityController.text) ?? 0;
+              if (newQuantity > 0) {
+                setState(() {
+                  cart[product.id] = newQuantity;
+                });
+                onUpdate();
+              } else if (newQuantity == 0) {
+                setState(() {
+                  cart.remove(product.id);
+                });
+                onUpdate();
+              }
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+            ),
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void showProductDetails(BuildContext context, ProduitModel product) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -160,8 +565,8 @@ class _SelectProductsPageState extends State<SelectProductsPage> {
 
   void showCartDialog(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final produits = produitController.produits;
-    final selectedProducts = produits.where((p) => cart[p.id] != null && cart[p.id]! > 0).toList();
+    final produits = produitController.produits ?? [];
+    final selectedProducts = produits.where((p) => (cart[p.id] ?? 0) > 0).toList();
     final totalAmount = selectedProducts.fold<double>(
       0, (sum, p) => sum + (p.prixUnitaireTTC * (cart[p.id] ?? 0))
     );
@@ -368,144 +773,186 @@ class _SelectProductsPageState extends State<SelectProductsPage> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                p.nom,
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: colorScheme.onSurface,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: colorScheme.primary.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                'x$qte',
-                                                style: TextStyle(
-                                                  color: colorScheme.primary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            "HT : ${p.prixUnitaire.toStringAsFixed(2)} €",
-                                            style: TextStyle(color: colorScheme.onSurfaceVariant)),
-                                          Text(
-                                            "TTC : ${p.prixUnitaireTTC.toStringAsFixed(2)} €",
-                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: colorScheme.primary),
+                                        // Nom du produit
+                                        Text(
+                                          p.nom,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
                                           ),
-                                          Text(
-                                            "TVA : ${p.tva.toStringAsFixed(2)}%",
-                                            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        const SizedBox(height: 8),
+                                        const SizedBox(height: 4),
+                                        // Prix
+                                        Text(
+                                          "HT : ${p.prixUnitaire.toStringAsFixed(2)} €",
+                                          style: TextStyle(color: colorScheme.onSurfaceVariant)
+                                        ),
+                                        Text(
+                                          "TTC : ${p.prixUnitaireTTC.toStringAsFixed(2)} €",
+                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: colorScheme.primary),
+                                        ),
+                                        Text(
+                                          "TVA : ${p.tva.toStringAsFixed(2)}%",
+                                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                                        ),
+                                        const SizedBox(height: 12),
                                         
-                                        // Contrôles de quantité
+                                        // Contrôles de quantité - Nouvelle disposition sous l'image
                                         Container(
-                                          height: 55,
-                                          decoration: BoxDecoration(
-                                            color: colorScheme.surfaceContainerHighest,
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: colorScheme.outlineVariant.withOpacity(0.3),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          width: double.infinity,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              // Bouton moins
-                                              GestureDetector(
-                                                onTap: qte > 0 ? () { 
-                                                  removeFromCart(p.id); 
-                                                  setStateDialog(() {}); 
-                                                } : null,
-                                                child: Container(
-                                                  width: 50,
-                                                  height: 55,
-                                                  decoration: BoxDecoration(
-                                                    color: qte > 0 ? Colors.red.shade200 : Colors.grey.shade300,
-                                                    borderRadius: const BorderRadius.only(
-                                                      topLeft: Radius.circular(12),
-                                                      bottomLeft: Radius.circular(12),
-                                                    ),
-                                                    border: Border.all(
-                                                      color: qte > 0 ? Colors.red.shade500 : Colors.grey.shade500,
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.remove,
-                                                    size: 28,
-                                                    color: qte > 0 ? Colors.red.shade800 : Colors.grey.shade700,
-                                                  ),
+                                              // Label "Quantité"
+                                              Text(
+                                                'Quantité',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: colorScheme.onSurfaceVariant,
                                                 ),
                                               ),
-                                              
-                                              // Quantité
-                                              Expanded(
-                                                child: Container(
-                                                  height: 55,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-                                                    border: Border.symmetric(
-                                                      vertical: BorderSide(
-                                                        color: Colors.grey.shade300,
-                                                        width: 1,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      '$qte',
-                                                      style: TextStyle(
-                                                        fontSize: 22,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.black,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              
-                                              // Bouton plus
-                                              GestureDetector(
-                                                onTap: () { 
-                                                  addToCart(p.id); 
-                                                  setStateDialog(() {}); 
-                                                },
-                                                child: Container(
-                                                  width: 50,
-                                                  height: 55,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green.shade200,
-                                                    borderRadius: const BorderRadius.only(
-                                                      topRight: Radius.circular(12),
-                                                      bottomRight: Radius.circular(12),
-                                                    ),
-                                                    border: Border.all(
-                                                      color: Colors.green.shade500,
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.add,
-                                                    size: 28,
-                                                    color: Colors.green.shade800,
-                                                  ),
+                                              const SizedBox(height: 6),
+                                                                                             // Contrôles horizontaux - Plus petits
+                                               Container(
+                                                 height: 40,
+                                                 decoration: BoxDecoration(
+                                                   color: colorScheme.surfaceContainerHighest,
+                                                   borderRadius: BorderRadius.circular(12),
+                                                   border: Border.all(
+                                                     color: colorScheme.outlineVariant.withOpacity(0.3),
+                                                     width: 1,
+                                                   ),
+                                                   boxShadow: [
+                                                     BoxShadow(
+                                                       color: Colors.black.withOpacity(0.05),
+                                                       blurRadius: 4,
+                                                       offset: const Offset(0, 1),
+                                                     ),
+                                                   ],
+                                                 ),
+                                                child: Row(
+                                                  children: [
+                                                                                                                                                               // Bouton moins - Plus petit
+                                                      GestureDetector(
+                                                        onTap: qte > 0 ? () { 
+                                                          removeFromCart(p.id); 
+                                                          Navigator.pop(context);
+                                                          showProductDetails(context, p);
+                                                        } : null,
+                                                       child: Container(
+                                                         width: 40,
+                                                         height: 40,
+                                                         decoration: BoxDecoration(
+                                                           color: qte > 0 ? Colors.red.shade500 : Colors.grey.shade300,
+                                                           borderRadius: const BorderRadius.only(
+                                                             topLeft: Radius.circular(10),
+                                                             bottomLeft: Radius.circular(10),
+                                                           ),
+                                                           border: Border.all(
+                                                             color: qte > 0 ? Colors.red.shade700 : Colors.grey.shade500,
+                                                             width: 2,
+                                                           ),
+                                                           boxShadow: [
+                                                             BoxShadow(
+                                                               color: qte > 0 ? Colors.red.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+                                                               blurRadius: 4,
+                                                               offset: const Offset(0, 1),
+                                                             ),
+                                                           ],
+                                                         ),
+                                                         child: Icon(
+                                                           Icons.remove,
+                                                           size: 20,
+                                                           color: Colors.white,
+                                                         ),
+                                                       ),
+                                                     ),
+                                                    
+                                                                                                                                                               // Zone de quantité - Plus claire et compacte
+                                                      Expanded(
+                                                        child: GestureDetector(
+                                                          onTap: () => _showQuantityDialog(context, p, qte, () {
+                                                            Navigator.pop(context);
+                                                            showProductDetails(context, p);
+                                                          }),
+                                                         child: Container(
+                                                           height: 40,
+                                                           decoration: BoxDecoration(
+                                                             color: Colors.white,
+                                                             border: Border.symmetric(
+                                                               vertical: BorderSide(
+                                                                 color: Colors.grey.shade400,
+                                                                 width: 1,
+                                                               ),
+                                                             ),
+                                                           ),
+                                                           child: Center(
+                                                             child: Column(
+                                                               mainAxisAlignment: MainAxisAlignment.center,
+                                                               children: [
+                                                                 Text(
+                                                                   '$qte',
+                                                                   style: TextStyle(
+                                                                     fontSize: 16,
+                                                                     fontWeight: FontWeight.bold,
+                                                                     color: Colors.black,
+                                                                   ),
+                                                                 ),
+                                                                 Text(
+                                                                   'Taper pour modifier',
+                                                                   style: TextStyle(
+                                                                     fontSize: 7,
+                                                                     color: Colors.blue.shade600,
+                                                                     fontWeight: FontWeight.w500,
+                                                                   ),
+                                                                 ),
+                                                               ],
+                                                             ),
+                                                           ),
+                                                         ),
+                                                       ),
+                                                     ),
+                                                    
+                                                                                                                                                               // Bouton plus - Plus petit
+                                                      GestureDetector(
+                                                        onTap: () { 
+                                                          addToCart(p.id); 
+                                                          Navigator.pop(context);
+                                                          showProductDetails(context, p);
+                                                        },
+                                                       child: Container(
+                                                         width: 40,
+                                                         height: 40,
+                                                         decoration: BoxDecoration(
+                                                           color: Colors.green.shade500,
+                                                           borderRadius: const BorderRadius.only(
+                                                             topRight: Radius.circular(10),
+                                                             bottomRight: Radius.circular(10),
+                                                           ),
+                                                           border: Border.all(
+                                                             color: Colors.green.shade700,
+                                                             width: 2,
+                                                           ),
+                                                           boxShadow: [
+                                                             BoxShadow(
+                                                               color: Colors.green.withOpacity(0.3),
+                                                               blurRadius: 4,
+                                                               offset: const Offset(0, 1),
+                                                             ),
+                                                           ],
+                                                         ),
+                                                         child: Icon(
+                                                           Icons.add,
+                                                           size: 20,
+                                                           color: Colors.white,
+                                                         ),
+                                                       ),
+                                                     ),
+                                                  ],
                                                 ),
                                               ),
                                             ],
@@ -630,10 +1077,42 @@ class _SelectProductsPageState extends State<SelectProductsPage> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                // Vérifier si une promotion est sélectionnée
+                                if (promotions.isNotEmpty && selectedPromotion == null) {
+                                  // Afficher un message d'erreur
+                                  Get.snackbar(
+                                    'Promotion requise',
+                                    'Veuillez sélectionner une promotion pour commander.',
+                                    backgroundColor: Colors.red.shade100,
+                                    colorText: Colors.red.shade900,
+                                    duration: const Duration(seconds: 3),
+                                    snackPosition: SnackPosition.TOP,
+                                  );
+                                  return;
+                                }
+                                
+
+                                
+                                // Fermer le dialog du panier d'abord
                                 Navigator.pop(context);
                                 // Navigation vers la sélection du client
-                                Get.toNamed('/select-client');
+                                final result = await Get.toNamed('/select-client');
+                                if (result == true) {
+                                  final selectedClient = commandeController.selectedClient.value;
+                                  if (selectedClient != null) {
+                                    // Créer la commande directement
+                                    await commandeController.createCommande(selectedClient.id, cart);
+                                    // Vider le panier
+                                    setState(() {
+                                      cart.clear();
+                                    });
+                                    // Afficher la popup de succès
+                                    await _showSuccessDialog(Get.context!);
+                                    // Rediriger vers la page des commandes en attente
+                                    Get.offAllNamed('/commandes');
+                                  }
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3F51B5),
@@ -922,74 +1401,114 @@ class _SelectProductsPageState extends State<SelectProductsPage> {
                                         ),
                                         const Spacer(),
                                         
-                                        // Contrôles de quantité
+                                        // Contrôles de quantité améliorés dans la grille
                                         Container(
-                                          height: 36,
+                                          height: 42,
                                           decoration: BoxDecoration(
                                             color: colorScheme.surfaceContainerHighest,
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(12),
                                             border: Border.all(
                                               color: colorScheme.outlineVariant.withOpacity(0.3),
+                                              width: 1.5,
                                             ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.05),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 1),
+                                              ),
+                                            ],
                                           ),
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              // Bouton moins
+                                              // Bouton moins - Plus grand
                                               GestureDetector(
                                                 onTap: qte > 0 ? () => removeFromCart(p.id) : null,
                                                 child: Container(
-                                                  width: 40,
-                                                  height: 36,
+                                                  width: 45,
+                                                  height: 42,
                                                   decoration: BoxDecoration(
-                                                    color: qte > 0 ? colorScheme.errorContainer : colorScheme.surfaceContainerLow,
+                                                    color: qte > 0 ? Colors.red.shade100 : Colors.grey.shade200,
                                                     borderRadius: const BorderRadius.only(
-                                                      topLeft: Radius.circular(8),
-                                                      bottomLeft: Radius.circular(8),
+                                                      topLeft: Radius.circular(11),
+                                                      bottomLeft: Radius.circular(11),
+                                                    ),
+                                                    border: Border.all(
+                                                      color: qte > 0 ? Colors.red.shade300 : Colors.grey.shade400,
+                                                      width: 1.5,
                                                     ),
                                                   ),
                                                   child: Icon(
                                                     Icons.remove,
-                                                    size: 18,
-                                                    color: qte > 0 ? colorScheme.onErrorContainer : colorScheme.onSurfaceVariant,
+                                                    size: 20,
+                                                    color: qte > 0 ? Colors.red.shade600 : Colors.grey.shade500,
                                                   ),
                                                 ),
                                               ),
                                               
-                                              // Quantité
+                                              // Zone de quantité avec saisie clavier
                                               Expanded(
-                                                child: Container(
-                                                  height: 36,
-                                                  child: Center(
-                                                    child: Text(
-                                                      '$qte',
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: colorScheme.onSurface,
+                                                child: GestureDetector(
+                                                  onTap: () => _showQuantityDialog(context, p, qte, () {}),
+                                                  child: Container(
+                                                    height: 42,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      border: Border.symmetric(
+                                                        vertical: BorderSide(
+                                                          color: Colors.grey.shade300,
+                                                          width: 1,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    child: Center(
+                                                      child: Column(
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Text(
+                                                            '$qte',
+                                                            style: TextStyle(
+                                                              fontSize: 18,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: colorScheme.onSurface,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            'Taper',
+                                                            style: TextStyle(
+                                                              fontSize: 8,
+                                                              color: Colors.grey.shade600,
+                                                            ),
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
                                                   ),
                                                 ),
                                               ),
                                               
-                                              // Bouton plus
+                                              // Bouton plus - Plus grand
                                               GestureDetector(
                                                 onTap: () => addToCart(p.id),
                                                 child: Container(
-                                                  width: 40,
-                                                  height: 36,
+                                                  width: 45,
+                                                  height: 42,
                                                   decoration: BoxDecoration(
-                                                    color: colorScheme.tertiaryContainer,
+                                                    color: Colors.green.shade100,
                                                     borderRadius: const BorderRadius.only(
-                                                      topRight: Radius.circular(8),
-                                                      bottomRight: Radius.circular(8),
+                                                      topRight: Radius.circular(11),
+                                                      bottomRight: Radius.circular(11),
+                                                    ),
+                                                    border: Border.all(
+                                                      color: Colors.green.shade300,
+                                                      width: 1.5,
                                                     ),
                                                   ),
                                                   child: Icon(
                                                     Icons.add,
-                                                    size: 18,
-                                                    color: colorScheme.onTertiaryContainer,
+                                                    size: 20,
+                                                    color: Colors.green.shade600,
                                                   ),
                                                 ),
                                               ),
@@ -1018,35 +1537,63 @@ class _SelectProductsPageState extends State<SelectProductsPage> {
               onPressed: (promotions.isNotEmpty && selectedPromotion == null)
                     ? null
                   : () async {
-                      commandeController.selectedPromotion.value = selectedPromotion;
+                      // Vérifier si une promotion est sélectionnée
+                      if (promotions.isNotEmpty && selectedPromotion == null) {
+                        Get.snackbar(
+                          'Promotion requise',
+                          'Veuillez sélectionner une promotion pour commander.',
+                          backgroundColor: Colors.red.shade100,
+                          colorText: Colors.red.shade900,
+                          duration: const Duration(seconds: 3),
+                          snackPosition: SnackPosition.TOP,
+                        );
+                        return;
+                      }
+                      
+                      // Navigation vers la sélection du client
                       final result = await Get.toNamed('/select-client');
                       if (result == true) {
                         final selectedClient = commandeController.selectedClient.value;
                         if (selectedClient != null) {
+                          // Créer la commande directement
                           await commandeController.createCommande(selectedClient.id, cart);
+                          // Vider le panier
+                          setState(() {
+                            cart.clear();
+                          });
+                          // Afficher la popup de succès
+                          await _showSuccessDialog(Get.context!);
+                          // Rediriger vers la page des commandes en attente
+                          Get.offAllNamed('/commandes');
                         }
                       }
                     },
-                label: const Text(
-                  'COMMANDER',
-                  style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                    letterSpacing: 1.2,
-                ),
-              ),
-              icon: const Icon(
-                Icons.shopping_cart_checkout,
-                color: Colors.white,
-                size: 24,
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.shopping_cart_checkout,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'COMMANDER',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
               backgroundColor: const Color(0xFF3F51B5),
-                elevation: 8,
+              elevation: 8,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
               ),
-                extendedPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              extendedPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             )
           : null,
       // Message UX si une promotion est requise mais non sélectionnée

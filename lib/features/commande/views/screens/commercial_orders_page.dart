@@ -18,6 +18,7 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
   String searchQuery = '';
   String sortMode = 'date';
   DateTime? selectedDate;
+  String? selectedStatus;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -46,13 +47,31 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
   Color _getStatusColor(String status, ColorScheme colorScheme) {
     switch (status.toLowerCase()) {
       case 'en_attente':
+      case 'en attente':
+      case 'pending':
+      case 'non_validee':
+      case 'non validee':
         return colorScheme.secondaryContainer;
       case 'validee':
+      case 'validée':
+      case 'validated':
         return colorScheme.primaryContainer;
       case 'livree':
+      case 'livrée':
+      case 'delivered':
         return colorScheme.tertiaryContainer;
       case 'annulee':
+      case 'annulée':
+      case 'cancelled':
         return colorScheme.errorContainer;
+      case 'en_preparation':
+      case 'en préparation':
+      case 'preparing':
+        return colorScheme.tertiaryContainer.withOpacity(0.8);
+      case 'en_livraison':
+      case 'en livraison':
+      case 'shipping':
+        return colorScheme.primaryContainer.withOpacity(0.8);
       default:
         return colorScheme.surfaceVariant;
     }
@@ -61,13 +80,31 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
   Color _getStatusTextColor(String status, ColorScheme colorScheme) {
     switch (status.toLowerCase()) {
       case 'en_attente':
+      case 'en attente':
+      case 'pending':
+      case 'non_validee':
+      case 'non validee':
         return colorScheme.onSecondaryContainer;
       case 'validee':
+      case 'validée':
+      case 'validated':
         return colorScheme.onPrimaryContainer;
       case 'livree':
+      case 'livrée':
+      case 'delivered':
         return colorScheme.onTertiaryContainer;
       case 'annulee':
+      case 'annulée':
+      case 'cancelled':
         return colorScheme.onErrorContainer;
+      case 'en_preparation':
+      case 'en préparation':
+      case 'preparing':
+        return colorScheme.onTertiaryContainer;
+      case 'en_livraison':
+      case 'en livraison':
+      case 'shipping':
+        return colorScheme.onPrimaryContainer;
       default:
         return colorScheme.onSurfaceVariant;
     }
@@ -76,15 +113,66 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
   String _getStatusText(String status) {
     switch (status.toLowerCase()) {
       case 'en_attente':
+      case 'en attente':
+      case 'pending':
+      case 'non_validee':
+      case 'non validee':
         return 'En attente';
       case 'validee':
+      case 'validée':
+      case 'validated':
         return 'Validée';
       case 'livree':
+      case 'livrée':
+      case 'delivered':
         return 'Livrée';
       case 'annulee':
+      case 'annulée':
+      case 'cancelled':
         return 'Annulée';
+      case 'en_preparation':
+      case 'en préparation':
+      case 'preparing':
+        return 'En préparation';
+      case 'en_livraison':
+      case 'en livraison':
+      case 'shipping':
+        return 'En livraison';
       default:
-        return status;
+        return status.isNotEmpty ? status : 'En attente';
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'en_attente':
+      case 'en attente':
+      case 'pending':
+      case 'non_validee':
+      case 'non validee':
+        return Icons.schedule_rounded;
+      case 'validee':
+      case 'validée':
+      case 'validated':
+        return Icons.check_circle_rounded;
+      case 'livree':
+      case 'livrée':
+      case 'delivered':
+        return Icons.local_shipping_rounded;
+      case 'annulee':
+      case 'annulée':
+      case 'cancelled':
+        return Icons.cancel_rounded;
+      case 'en_preparation':
+      case 'en préparation':
+      case 'preparing':
+        return Icons.inventory_2_rounded;
+      case 'en_livraison':
+      case 'en livraison':
+      case 'shipping':
+        return Icons.delivery_dining_rounded;
+      default:
+        return Icons.info_rounded;
     }
   }
 
@@ -136,7 +224,7 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                 },
               ),
               title: const Text(
-                'Mes Commandes',
+                'Commandes en Attente',
                 style: TextStyle(color: Colors.white),
               ),
               actions: [
@@ -211,7 +299,7 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                     ),
                     child: TextField(
                       decoration: InputDecoration(
-                        hintText: '🔍 Rechercher une commande ou un client...',
+                        hintText: ' Rechercher une commande ou un client...',
                         hintStyle: TextStyle(
                           color: colorScheme.onSurfaceVariant,
                           fontSize: 16,
@@ -453,6 +541,13 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
 
                 var filtered = controller.commandes
                     .where((c) {
+                      // Filtre par statut - uniquement les commandes en attente
+                      bool statusMatch = c.statut.toLowerCase() == 'en_attente' ||
+                                       c.statut.toLowerCase() == 'en attente' ||
+                                       c.statut.toLowerCase() == 'pending' ||
+                                       c.statut.toLowerCase() == 'non_validee' ||
+                                       c.statut.toLowerCase() == 'non validee';
+                      
                       // Filtre par recherche
                       bool searchMatch = c.numeroCommande
                               .toLowerCase()
@@ -475,7 +570,7 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                         }
                       }
                       
-                      return searchMatch && dateMatch;
+                      return statusMatch && searchMatch && dateMatch;
                     })
                     .toList();
 
@@ -532,12 +627,12 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                           // Titre principal
                           Text(
                             searchQuery.isEmpty && selectedDate == null
-                                ? "Aucune commande trouvée"
+                                ? "Aucune commande en attente"
                                 : searchQuery.isNotEmpty && selectedDate != null
                                     ? "Aucun résultat"
                                     : searchQuery.isNotEmpty
                                         ? "Aucun résultat"
-                                        : "Aucune commande",
+                                        : "Aucune commande en attente",
                             style: TextStyle(
                               color: colorScheme.onSurface,
                               fontSize: 20,
@@ -550,12 +645,12 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                           // Message détaillé
                           Text(
                             searchQuery.isEmpty && selectedDate == null
-                                ? "Vous n'avez pas encore créé de commandes"
+                                ? "Vous n'avez pas de commandes en attente"
                                 : searchQuery.isNotEmpty && selectedDate != null
-                                    ? "Aucune commande correspondant à '$searchQuery' le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}"
+                                    ? "Aucune commande en attente correspondant à '$searchQuery' le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}"
                                     : searchQuery.isNotEmpty
-                                        ? "Aucune commande correspondant à '$searchQuery'"
-                                        : "Aucune commande le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}",
+                                        ? "Aucune commande en attente correspondant à '$searchQuery'"
+                                        : "Aucune commande en attente le ${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}",
                             style: TextStyle(
                               color: colorScheme.onSurfaceVariant,
                               fontSize: 16,
@@ -566,57 +661,34 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                           if (searchQuery.isEmpty && selectedDate == null) ...[
                             const SizedBox(height: 24),
                             
-                            // Bouton d'action
+                            // Message informatif
                             Container(
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    colorScheme.primary,
-                                    colorScheme.primary.withOpacity(0.8),
-                                  ],
+                                color: colorScheme.primaryContainer.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: colorScheme.primary.withOpacity(0.2),
                                 ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: colorScheme.primary.withOpacity(0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline_rounded,
+                                    color: colorScheme.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      "Cette page affiche uniquement les commandes en attente de validation. Les commandes validées, livrées ou annulées ne sont pas visibles ici.",
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface,
+                                        fontSize: 14,
+                                      ),
+                                    ),
                                   ),
                                 ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () {
-                                    Get.toNamed('/select-products');
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 16,
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.add_shopping_cart_rounded,
-                                          color: colorScheme.onPrimary,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          "Créer ma première commande",
-                                          style: TextStyle(
-                                            color: colorScheme.onPrimary,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
                               ),
                             ),
                           ] else ...[
@@ -757,8 +829,44 @@ class _CommercialOrdersPageState extends State<CommercialOrdersPage>
                                           ),
                                         ),
                                         
-                                                                                 // Espace pour équilibrer le design
-                                         const SizedBox(width: 8),
+                                        // Statut de la commande
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _getStatusColor(cmd.statut, colorScheme),
+                                            borderRadius: BorderRadius.circular(20),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: _getStatusColor(cmd.statut, colorScheme).withOpacity(0.3),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              // Icône selon le statut
+                                              Icon(
+                                                _getStatusIcon(cmd.statut),
+                                                size: 16,
+                                                color: _getStatusTextColor(cmd.statut, colorScheme),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                _getStatusText(cmd.statut),
+                                                style: TextStyle(
+                                                  color: _getStatusTextColor(cmd.statut, colorScheme),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ],
                                     ),
                                     

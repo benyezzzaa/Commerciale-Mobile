@@ -16,8 +16,8 @@ class VisiteController extends GetxController {
   final error = ''.obs;
 
   final selectedDate = DateTime.now().obs;
-  ClientModel? selectedClient;
-  RaisonModel? selectedRaison;
+  final selectedClient = Rx<ClientModel?>(null);
+  final selectedRaison = Rx<RaisonModel?>(null);
 
   @override
   void onInit() {
@@ -36,20 +36,26 @@ class VisiteController extends GetxController {
         return;
       }
       
+      print('🔄 Chargement des clients...');
       final clientsData = await _service.getClients(token);
+      print('✅ Clients chargés: ${clientsData.length}');
+      
+      print('🔄 Chargement des raisons...');
       final raisonsData = await _service.getRaisons(token);
+      print('✅ Raisons chargées: ${raisonsData.length}');
       
       clients.value = clientsData;
       raisons.value = raisonsData;
     } catch (e) {
-      error.value = e.toString();
+      print('❌ Erreur lors du chargement: $e');
+      error.value = 'Erreur lors du chargement des données: $e';
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<bool> createVisite() async {
-    if (selectedClient == null || selectedRaison == null) {
+    if (selectedClient.value == null || selectedRaison.value == null) {
       error.value = 'Veuillez sélectionner un client et une raison';
       return false;
     }
@@ -67,8 +73,8 @@ class VisiteController extends GetxController {
       final visiteResult = await _service.createVisite(
         token: token,
         date: selectedDate.value,
-        clientId: selectedClient!.id,
-        raisonId: selectedRaison!.id,
+        clientId: selectedClient.value!.id,
+        raisonId: selectedRaison.value!.id,
       );
 
       if (visiteResult.isSuccess) {
@@ -97,11 +103,11 @@ class VisiteController extends GetxController {
   }
 
   void setClient(ClientModel? client) {
-    selectedClient = client;
+    selectedClient.value = client;
   }
 
   void setRaison(RaisonModel? raison) {
-    selectedRaison = raison;
+    selectedRaison.value = raison;
   }
 
   String _formatDate(DateTime date) {
@@ -115,7 +121,7 @@ class VisiteController extends GetxController {
 
   // Méthode pour afficher la carte avec les positions
   void showPositionsMap() {
-    if (selectedClient == null) {
+    if (selectedClient.value == null) {
       Get.snackbar(
         'Erreur',
         'Veuillez d\'abord sélectionner un client',
@@ -139,7 +145,7 @@ class VisiteController extends GetxController {
     // Naviguer vers la page de carte avec les positions
     Get.toNamed('/positions-map', arguments: {
       'commercial': commercial,
-      'client': selectedClient,
+      'client': selectedClient.value,
     });
   }
 } 
