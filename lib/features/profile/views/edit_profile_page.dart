@@ -18,8 +18,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _prenomController;
   late TextEditingController _emailController;
   late TextEditingController _telController;
+  late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
   
   bool _isLoading = false;
+  bool _showPassword = false;
+  bool _showConfirmPassword = false;
 
   @override
   void initState() {
@@ -28,6 +32,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _prenomController = TextEditingController(text: controller.prenom.value);
     _emailController = TextEditingController(text: controller.email.value);
     _telController = TextEditingController(text: controller.tel.value);
+    _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
   }
 
   @override
@@ -36,6 +42,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _prenomController.dispose();
     _emailController.dispose();
     _telController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -47,11 +55,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => _isLoading = true);
 
     try {
+      String? password;
+      if (_passwordController.text.isNotEmpty) {
+        password = _passwordController.text;
+      }
+
       await controller.updateProfile(
         nom: _nomController.text.trim(),
         prenom: _prenomController.text.trim(),
         email: _emailController.text.trim(),
         tel: _telController.text.trim(),
+        password: password,
       );
       
       Get.back();
@@ -223,6 +237,120 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             return 'Le téléphone est requis';
                           }
                           return null;
+                        },
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Séparateur pour le mot de passe
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: Colors.grey.withOpacity(0.3),
+                              thickness: 1,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'Changer le mot de passe (optionnel)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: Colors.grey.withOpacity(0.3),
+                              thickness: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Nouveau mot de passe
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: !_showPassword,
+                        decoration: InputDecoration(
+                          labelText: 'Nouveau mot de passe',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showPassword ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showPassword = !_showPassword;
+                              });
+                            },
+                          ),
+                          border: const OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          // Validation seulement si un mot de passe est saisi
+                          if (value != null && value.isNotEmpty) {
+                            if (value.length < 6) {
+                              return 'Le mot de passe doit contenir au moins 6 caractères';
+                            }
+                            if (_confirmPasswordController.text.isNotEmpty && 
+                                value != _confirmPasswordController.text) {
+                              return 'Les mots de passe ne correspondent pas';
+                            }
+                          }
+                          return null;
+                        },
+                        onChanged: (value) {
+                          // Re-valider le formulaire quand le mot de passe change
+                          if (_formKey.currentState != null) {
+                            _formKey.currentState!.validate();
+                          }
+                        },
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Confirmation du mot de passe
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: !_showConfirmPassword,
+                        decoration: InputDecoration(
+                          labelText: 'Confirmer le nouveau mot de passe',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showConfirmPassword = !_showConfirmPassword;
+                              });
+                            },
+                          ),
+                          border: const OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          // Validation seulement si un mot de passe est saisi
+                          if (_passwordController.text.isNotEmpty) {
+                            if (value == null || value.isEmpty) {
+                              return 'Veuillez confirmer le mot de passe';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Les mots de passe ne correspondent pas';
+                            }
+                          }
+                          return null;
+                        },
+                        onChanged: (value) {
+                          // Re-valider le formulaire quand la confirmation change
+                          if (_formKey.currentState != null) {
+                            _formKey.currentState!.validate();
+                          }
                         },
                       ),
                     ],
